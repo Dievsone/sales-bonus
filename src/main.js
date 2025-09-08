@@ -82,9 +82,8 @@ function analyzeSalesData(data, options) {
             itemRevenue = Number(itemRevenue.toFixed(2));
             sellersInfo[sellerId].revenue += itemRevenue;
 
-            // прибыль (тоже округляем на позиции)
+            // прибыль (накапливаем без округления)
             let itemProfit = itemRevenue - product.purchase_price * item.quantity;
-            itemProfit = Number(itemProfit.toFixed(2));
             sellersInfo[sellerId].profit += itemProfit;
 
             // товары
@@ -106,6 +105,10 @@ function analyzeSalesData(data, options) {
     for (let i = 0; i < sellersArray.length; i++) {
         let seller = sellersArray[i];
 
+        // финальное округление
+        seller.revenue = Number(seller.revenue.toFixed(2));
+        seller.profit = Number(seller.profit.toFixed(2));
+
         // бонус
         seller.bonus = options.calculateBonus(i, sellersArray.length, seller);
 
@@ -117,10 +120,6 @@ function analyzeSalesData(data, options) {
 
         productList.sort((a, b) => b.quantity - a.quantity);
         seller.top_products = productList.slice(0, 10);
-
-        // финальное округление
-        seller.revenue = Number(seller.revenue.toFixed(2));
-        seller.profit = Number(seller.profit.toFixed(2));
 
         delete seller.products;
     }
