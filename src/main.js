@@ -1,14 +1,12 @@
 /**
- * Функция для расчета прибыли (выручка минус закупочная стоимость)
+ * Функция для расчета выручки (сумма продаж после скидки)
  * @param item товар в чеке
- * @param product карточка товара
+ * @param product карточка товара (не используется, но нужен для совместимости)
  * @returns {number}
  */
 function calculateSimpleRevenue(item, product) {
     let priceAfterDiscount = item.sale_price * (1 - item.discount / 100);
-    let revenue = priceAfterDiscount * item.quantity;
-    let cost = product.purchase_price * item.quantity;
-    return revenue - cost;
+    return priceAfterDiscount * item.quantity;
 }
 
 /**
@@ -31,14 +29,27 @@ function calculateBonusByProfit(index, total, seller) {
 }
 
 /**
- * Основной анализ
+ * Функция для анализа данных продаж
  * @param data все данные
+ * @param options функции для расчетов
  * @returns {Array}
  */
-function analyzeSalesData(data) {
+function analyzeSalesData(data, options) {
+    // проверки входных данных
     if (!data || !data.customers || !data.products || !data.sellers || !data.purchase_records) {
-        console.log("Ошибка: данные не полные!");
-        return [];
+        throw new Error("Ошибка: данные не полные!");
+    }
+    if (!options || !options.calculateRevenue || !options.calculateBonus) {
+        throw new Error("Ошибка: нет функций для расчетов!");
+    }
+    if (!Array.isArray(data.sellers) || data.sellers.length === 0) {
+        throw new Error("Ошибка: нет продавцов!");
+    }
+    if (!Array.isArray(data.products) || data.products.length === 0) {
+        throw new Error("Ошибка: нет товаров!");
+    }
+    if (!Array.isArray(data.purchase_records) || data.purchase_records.length === 0) {
+        throw new Error("Ошибка: нет покупок!");
     }
 
     let sellersInfo = {};
@@ -67,15 +78,14 @@ function analyzeSalesData(data) {
             if (!product) continue;
 
             // выручка
-            let priceAfterDiscount = item.sale_price * (1 - item.discount / 100);
-            let itemRevenue = priceAfterDiscount * item.quantity;
+            let itemRevenue = options.calculateRevenue(item, product);
             sellersInfo[sellerId].revenue += itemRevenue;
 
-            // прибыль (через calculateSimpleRevenue)
-            let itemProfit = calculateSimpleRevenue(item, product);
+            // прибыль = выручка - себестоимость
+            let itemProfit = itemRevenue - product.purchase_price * item.quantity;
             sellersInfo[sellerId].profit += itemProfit;
 
-            // по товарам
+            // товары
             if (!sellersInfo[sellerId].products[item.sku]) {
                 sellersInfo[sellerId].products[item.sku] = 0;
             }
@@ -94,7 +104,7 @@ function analyzeSalesData(data) {
         let seller = sellersArray[i];
 
         // бонус
-        seller.bonus = calculateBonusByProfit(i, sellersArray.length, seller);
+        seller.bonus = options.calculateBonus(i, sellersArray.length, seller);
 
         // топ-10 товаров
         let productList = Object.entries(seller.products).map(([sku, revenue]) => ({ sku, revenue }));
