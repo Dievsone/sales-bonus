@@ -77,12 +77,14 @@ function analyzeSalesData(data, options) {
             let product = data.products.find(p => p.sku === item.sku);
             if (!product) continue;
 
-            // выручка
+            // выручка (округляем на позиции)
             let itemRevenue = options.calculateRevenue(item, product);
+            itemRevenue = Number(itemRevenue.toFixed(2));
             sellersInfo[sellerId].revenue += itemRevenue;
 
-            // прибыль = выручка - себестоимость
+            // прибыль (тоже округляем на позиции)
             let itemProfit = itemRevenue - product.purchase_price * item.quantity;
+            itemProfit = Number(itemProfit.toFixed(2));
             sellersInfo[sellerId].profit += itemProfit;
 
             // товары
@@ -117,7 +119,7 @@ function analyzeSalesData(data, options) {
         }
         seller.top_products = topProducts;
 
-        // финальное округление
+        // финальное округление (на всякий случай)
         seller.revenue = Number(seller.revenue.toFixed(2));
         seller.profit = Number(seller.profit.toFixed(2));
 
