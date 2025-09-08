@@ -77,12 +77,12 @@ function analyzeSalesData(data, options) {
             let product = data.products.find(p => p.sku === item.sku);
             if (!product) continue;
 
-            // выручка (округляем каждую позицию)
+            // выручка — округляется сразу
             let itemRevenue = options.calculateRevenue(item, product);
             itemRevenue = Number(itemRevenue.toFixed(2));
             sellersInfo[sellerId].revenue += itemRevenue;
 
-            // прибыль (накапливаем без округления)
+            // прибыль — считаем, но НЕ округляем на каждой итерации!
             let itemProfit = itemRevenue - product.purchase_price * item.quantity;
             sellersInfo[sellerId].profit += itemProfit;
 
@@ -105,7 +105,7 @@ function analyzeSalesData(data, options) {
     for (let i = 0; i < sellersArray.length; i++) {
         let seller = sellersArray[i];
 
-        // финальное округление
+        // финальное округление — ТОЛЬКО здесь!
         seller.revenue = Number(seller.revenue.toFixed(2));
         seller.profit = Number(seller.profit.toFixed(2));
 
