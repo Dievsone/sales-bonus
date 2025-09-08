@@ -77,21 +77,20 @@ function analyzeSalesData(data, options) {
             let product = data.products.find(p => p.sku === item.sku);
             if (!product) continue;
 
-            // выручка (округляем на позиции)
+            // выручка
             let itemRevenue = options.calculateRevenue(item, product);
-            itemRevenue = Number(itemRevenue.toFixed(2));
             sellersInfo[sellerId].revenue += itemRevenue;
 
-            // прибыль (тоже округляем на позиции)
+            // прибыль
             let itemProfit = itemRevenue - product.purchase_price * item.quantity;
-            itemProfit = Number(itemProfit.toFixed(2));
             sellersInfo[sellerId].profit += itemProfit;
 
-            // товары
+            // статистика по товарам (считаем выручку и количество)
             if (!sellersInfo[sellerId].products[item.sku]) {
-                sellersInfo[sellerId].products[item.sku] = 0;
+                sellersInfo[sellerId].products[item.sku] = { revenue: 0, quantity: 0 };
             }
-            sellersInfo[sellerId].products[item.sku] += itemRevenue;
+            sellersInfo[sellerId].products[item.sku].revenue += itemRevenue;
+            sellersInfo[sellerId].products[item.sku].quantity += item.quantity;
         }
     }
 
@@ -108,18 +107,16 @@ function analyzeSalesData(data, options) {
         // бонус
         seller.bonus = options.calculateBonus(i, sellersArray.length, seller);
 
-        // топ-10 товаров
-        let productList = Object.entries(seller.products).map(([sku, revenue]) => ({ sku, revenue }));
-        productList.sort((a, b) => b.revenue - a.revenue);
+        // топ-10 товаров (по количеству продаж)
+        let productList = Object.entries(seller.products).map(([sku, data]) => ({
+            sku,
+            quantity: data.quantity
+        }));
 
-        let topProducts = [];
-        for (let j = 0; j < Math.min(10, productList.length); j++) {
-            let product = data.products.find(p => p.sku === productList[j].sku);
-            if (product) topProducts.push(product.name);
-        }
-        seller.top_products = topProducts;
+        productList.sort((a, b) => b.quantity - a.quantity);
+        seller.top_products = productList.slice(0, 10);
 
-        // финальное округление (на всякий случай)
+        // финальное округление
         seller.revenue = Number(seller.revenue.toFixed(2));
         seller.profit = Number(seller.profit.toFixed(2));
 
