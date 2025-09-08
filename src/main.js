@@ -77,15 +77,17 @@ function analyzeSalesData(data, options) {
             let product = data.products.find(p => p.sku === item.sku);
             if (!product) continue;
 
-            // выручка
+            // выручка (округляем каждую позицию)
             let itemRevenue = options.calculateRevenue(item, product);
+            itemRevenue = Number(itemRevenue.toFixed(2));
             sellersInfo[sellerId].revenue += itemRevenue;
 
-            // прибыль
+            // прибыль (тоже округляем на позиции)
             let itemProfit = itemRevenue - product.purchase_price * item.quantity;
+            itemProfit = Number(itemProfit.toFixed(2));
             sellersInfo[sellerId].profit += itemProfit;
 
-            // статистика по товарам (считаем выручку и количество)
+            // товары
             if (!sellersInfo[sellerId].products[item.sku]) {
                 sellersInfo[sellerId].products[item.sku] = { revenue: 0, quantity: 0 };
             }
